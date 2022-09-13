@@ -1,3 +1,4 @@
+import { InsertDriveFileTwoTone } from '@mui/icons-material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -13,7 +14,9 @@ import TextField from '@mui/material/TextField';
 import * as React from 'react';
 import { useState } from 'react';
 import { categories } from '../utils/categories';
-import { addEntry } from '../utils/mutations';
+import { addEntry, updateEntry, deleteEntry } from '../utils/mutations';
+import QRCode from 'qrcode.react';
+
 
 // Modal component for individual entries.
 
@@ -28,14 +31,12 @@ export default function EntryModal({ entry, type, user }) {
 
    // State variables for modal status
 
-   // TODO: For editing, you may have to add and manage another state variable to check if the entry is being edited.
-
    const [open, setOpen] = useState(false);
    const [name, setName] = useState(entry.name);
    const [link, setLink] = useState(entry.link);
    const [description, setDescription] = useState(entry.description);
    const [category, setCategory] = React.useState(entry.category);
-
+   const [edit, setEditing] = useState(false);
    // Modal visibility handlers
 
    const handleClickOpen = () => {
@@ -52,7 +53,8 @@ export default function EntryModal({ entry, type, user }) {
 
    // Mutation handlers
 
-   const handleAdd = () => {
+   const handleAdd = () => 
+      {
       const newEntry = {
          name: name,
          link: link,
@@ -65,14 +67,29 @@ export default function EntryModal({ entry, type, user }) {
       addEntry(newEntry).catch(console.error);
       handleClose();
    };
+  
+   const handleUpdate = () => {
+      const newEntry = {
+         name: name,
+         link: link,
+         description: description,
+         category: category,
+         id: entry.id
+      };
 
-   // TODO: Add Edit Mutation Handler
+      updateEntry(newEntry).catch(console.error);
+      setEditing(false);
+      handleClose();
+   };
+   
+   const handleDelete = () => {
+      deleteEntry(entry).catch(console.error);
+      handleClose();
+   };
 
-   // TODO: Add Delete Mutation Handler
 
    // Button handlers for modal opening and inside-modal actions.
    // These buttons are displayed conditionally based on if adding or editing/opening.
-   // TODO: You may have to edit these buttons to implement editing/deleting functionality.
 
    const openButton =
       type === "edit" ? <IconButton onClick={handleClickOpen}>
@@ -87,6 +104,13 @@ export default function EntryModal({ entry, type, user }) {
       type === "edit" ?
          <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
+            {edit ? (
+             <Button style={{backgroundColor: "green"}} variant="contained" onClick={handleUpdate}>Confirm</Button>
+            ) : (
+            <Button variant="contained" onClick={() => {setEditing(true)}}>Edit</Button>
+            )}
+            <Button style={{color: 'red'}} onClick={handleDelete}>Delete</Button>
+
          </DialogActions>
          : type === "add" ?
             <DialogActions>
@@ -109,6 +133,10 @@ export default function EntryModal({ entry, type, user }) {
                   fullWidth
                   variant="standard"
                   value={name}
+                  InputProps={
+                     {readOnly: type === "edit" ? !edit : false ,
+                     }
+                  }
                   onChange={(event) => setName(event.target.value)}
                />
                <TextField
@@ -119,8 +147,18 @@ export default function EntryModal({ entry, type, user }) {
                   fullWidth
                   variant="standard"
                   value={link}
+                  InputProps={
+                     {readOnly: type === "edit" ? !edit : false }
+                  }
                   onChange={(event) => setLink(event.target.value)}
                />
+
+               <QRCode value={link} style={{ marginRight: 50 }}
+                  label="QRCode"
+                  margin="normal"
+                  variant="standard"
+                  fullWidth 
+                  />
                <TextField
                   margin="normal"
                   id="description"
@@ -130,6 +168,9 @@ export default function EntryModal({ entry, type, user }) {
                   multiline
                   maxRows={8}
                   value={description}
+                  InputProps={
+                     {readOnly: type === "edit" ? !edit : false }
+                  }
                   onChange={(event) => setDescription(event.target.value)}
                />
 
